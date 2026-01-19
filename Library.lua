@@ -28,7 +28,7 @@ local Toggles = {}
 local Options = {}
 local Tooltips = {}
 
-local BaseURL = "https://raw.githubusercontent.com/deividcomsono/Obsidian/refs/heads/main/"
+local BaseURL = "https://raw.githubusercontent.com/nick0022/Obsidian/refs/heads/main/"
 local CustomImageManager = {}
 local CustomImageManagerAssets = {
     TransparencyTexture = {
@@ -6702,365 +6702,269 @@ function Library:CreateWindow(WindowInfo)
         end
 
         function Tab:AddGroupbox(Info)
-            local BoxHolder = New("Frame", {
-                AutomaticSize = Enum.AutomaticSize.Y,
+    local BoxHolder = New("Frame", {
+        AutomaticSize = Enum.AutomaticSize.Y,
+        BackgroundTransparency = 1,
+        Size = UDim2.fromScale(1, 0),
+        Parent = Info.Side == 1 and TabLeft or TabRight,
+    })
+    New("UIListLayout", {
+        Padding = UDim.new(0, 2),
+        Parent = BoxHolder,
+    })
+    New("UIPadding", {
+        PaddingBottom = UDim.new(0, 4),
+        PaddingTop = UDim.new(0, 4),
+        Parent = BoxHolder,
+    })
+
+    local GroupboxHolder
+    local GroupboxLabel
+    local GroupboxContainer
+    local GroupboxList
+    local ToggleButton
+    local IsCollapsed = false
+    local CollapseTween = nil
+    local ArrowIcon = Library:GetIcon("chevron-down")
+
+    do
+        GroupboxHolder = New("Frame", {
+            BackgroundColor3 = "BackgroundColor",
+            Size = UDim2.fromScale(1, 0),
+            Parent = BoxHolder,
+        })
+        New("UICorner", {
+            CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
+            Parent = GroupboxHolder,
+        })
+        
+        --[[ PREMIUM GLOW OVERLAY ]]
+        local GlowOverlay = New("Frame", {
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            Size = UDim2.fromScale(1, 1),
+            ZIndex = 0,
+            Parent = GroupboxHolder,
+        })
+        New("UICorner", {
+            CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
+            Parent = GlowOverlay,
+        })
+        
+        local GlowStroke = New("UIStroke", {
+            Color = "AccentColor",
+            Thickness = 0.5,
+            Transparency = 0.7,
+            LineJoinMode = Enum.LineJoinMode.Round,
+            ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+            Parent = GlowOverlay,
+        })
+        
+        --[[ MAIN OUTLINES ]]
+        local OutlineStroke = New("UIStroke", {
+            Color = "OutlineColor",
+            Thickness = 1,
+            ZIndex = 2,
+            Parent = GroupboxHolder,
+        })
+        local ShadowStroke = New("UIStroke", {
+            Color = "DarkColor",
+            Thickness = 1.5,
+            ZIndex = 1,
+            Parent = GroupboxHolder,
+        })
+
+        --[[ HEADER WITH COLLAPSE BUTTON ]]
+        local HeaderContainer = New("Frame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 34),
+            Parent = GroupboxHolder,
+        })
+        New("UIListLayout", {
+            FillDirection = Enum.FillDirection.Horizontal,
+            HorizontalAlignment = Enum.HorizontalAlignment.Left,
+            VerticalAlignment = Enum.VerticalAlignment.Center,
+            Padding = UDim.new(0, 6),
+            Parent = HeaderContainer,
+        })
+
+        --[[ ICON ]]
+        local BoxIcon = Library:GetCustomIcon(Info.IconName)
+        if BoxIcon then
+            New("ImageLabel", {
+                Image = BoxIcon.Url,
+                ImageColor3 = BoxIcon.Custom and "WhiteColor" or "AccentColor",
+                ImageRectOffset = BoxIcon.ImageRectOffset,
+                ImageRectSize = BoxIcon.ImageRectSize,
+                Size = UDim2.fromOffset(20, 20),
+                Parent = HeaderContainer,
+            })
+        end
+
+        --[[ TITLE ]]
+        GroupboxLabel = New("TextLabel", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, -26, 1, 0),
+            Text = Info.Name,
+            TextSize = 15,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Parent = HeaderContainer,
+        })
+        New("UIPadding", {
+            PaddingLeft = UDim.new(0, 6),
+            PaddingRight = UDim.new(0, 6),
+            Parent = GroupboxLabel,
+        })
+
+        --[[ COLLAPSE/EXPAND BUTTON ]]
+        ToggleButton = New("TextButton", {
+            BackgroundTransparency = 1,
+            Size = UDim2.fromOffset(20, 20),
+            Text = "",
+            Parent = HeaderContainer,
+        })
+
+        if ArrowIcon then
+            New("ImageLabel", {
+                Image = ArrowIcon.Url,
+                ImageColor3 = "AccentColor",
+                ImageRectOffset = ArrowIcon.ImageRectOffset,
+                ImageRectSize = ArrowIcon.ImageRectSize,
+                ImageTransparency = 0.3,
+                Size = UDim2.fromScale(1, 1),
+                Parent = ToggleButton,
+            })
+        else
+            New("TextLabel", {
                 BackgroundTransparency = 1,
-                Size = UDim2.fromScale(1, 0),
-                Parent = Info.Side == 1 and TabLeft or TabRight,
+                Size = UDim2.fromScale(1, 1),
+                Text = "▼",
+                TextColor3 = "AccentColor",
+                TextScaled = true,
+                Parent = ToggleButton,
             })
-            New("UIListLayout", {
-                Padding = UDim.new(0, 6),
-                Parent = BoxHolder,
-            })
-            New("UIPadding", {
-                PaddingBottom = UDim.new(0, 4),
-                PaddingTop = UDim.new(0, 4),
-                Parent = BoxHolder,
-            })
-
-            local GroupboxHolder
-            local GroupboxLabel
-
-            local GroupboxContainer
-            local GroupboxList
-
-            do
-                GroupboxHolder = New("Frame", {
-                    BackgroundColor3 = "BackgroundColor",
-                    Size = UDim2.fromScale(1, 0),
-                    Parent = BoxHolder,
-                })
-                New("UICorner", {
-                    CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
-                    Parent = GroupboxHolder,
-                })
-                Library:AddOutline(GroupboxHolder)
-
-                Library:MakeLine(GroupboxHolder, {
-                    Position = UDim2.fromOffset(0, 34),
-                    Size = UDim2.new(1, 0, 0, 1),
-                })
-
-                local BoxIcon = Library:GetCustomIcon(Info.IconName)
-                if BoxIcon then
-                    New("ImageLabel", {
-                        Image = BoxIcon.Url,
-                        ImageColor3 = BoxIcon.Custom and "WhiteColor" or "AccentColor",
-                        ImageRectOffset = BoxIcon.ImageRectOffset,
-                        ImageRectSize = BoxIcon.ImageRectSize,
-                        Position = UDim2.fromOffset(6, 6),
-                        Size = UDim2.fromOffset(22, 22),
-                        Parent = GroupboxHolder,
-                    })
-                end
-
-                GroupboxLabel = New("TextLabel", {
-                    BackgroundTransparency = 1,
-                    Position = UDim2.fromOffset(BoxIcon and 24 or 0, 0),
-                    Size = UDim2.new(1, 0, 0, 34),
-                    Text = Info.Name,
-                    TextSize = 15,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    Parent = GroupboxHolder,
-                })
-                New("UIPadding", {
-                    PaddingLeft = UDim.new(0, 12),
-                    PaddingRight = UDim.new(0, 12),
-                    Parent = GroupboxLabel,
-                })
-
-                GroupboxContainer = New("Frame", {
-                    BackgroundTransparency = 1,
-                    Position = UDim2.fromOffset(0, 35),
-                    Size = UDim2.new(1, 0, 1, -35),
-                    Parent = GroupboxHolder,
-                })
-
-                GroupboxList = New("UIListLayout", {
-                    Padding = UDim.new(0, 8),
-                    Parent = GroupboxContainer,
-                })
-                New("UIPadding", {
-                    PaddingBottom = UDim.new(0, 7),
-                    PaddingLeft = UDim.new(0, 7),
-                    PaddingRight = UDim.new(0, 7),
-                    PaddingTop = UDim.new(0, 7),
-                    Parent = GroupboxContainer,
-                })
-            end
-
-            local Groupbox = {
-                BoxHolder = BoxHolder,
-                Holder = GroupboxHolder,
-                Container = GroupboxContainer,
-
-                Tab = Tab,
-                DependencyBoxes = {},
-                Elements = {},
-            }
-
-            function Groupbox:Resize()
-                GroupboxHolder.Size = UDim2.new(1, 0, 0, (GroupboxList.AbsoluteContentSize.Y / Library.DPIScale) + 49)
-            end
-
-            setmetatable(Groupbox, BaseGroupbox)
-
-            Groupbox:Resize()
-            Tab.Groupboxes[Info.Name] = Groupbox
-
-            return Groupbox
         end
 
-        function Tab:AddLeftGroupbox(Name, IconName)
-            return Tab:AddGroupbox({ Side = 1, Name = Name, IconName = IconName })
-        end
+        Library:MakeLine(GroupboxHolder, {
+            Position = UDim2.fromOffset(0, 34),
+            Size = UDim2.new(1, 0, 0, 1),
+        })
 
-        function Tab:AddRightGroupbox(Name, IconName)
-            return Tab:AddGroupbox({ Side = 2, Name = Name, IconName = IconName })
-        end
+        GroupboxContainer = New("Frame", {
+            BackgroundTransparency = 1,
+            Position = UDim2.fromOffset(0, 35),
+            Size = UDim2.new(1, 0, 1, -35),
+            Parent = GroupboxHolder,
+        })
 
-        function Tab:AddTabbox(Info)
-            local BoxHolder = New("Frame", {
-                AutomaticSize = Enum.AutomaticSize.Y,
-                BackgroundTransparency = 1,
-                Size = UDim2.fromScale(1, 0),
-                Parent = Info.Side == 1 and TabLeft or TabRight,
-            })
-            New("UIListLayout", {
-                Padding = UDim.new(0, 6),
-                Parent = BoxHolder,
-            })
-            New("UIPadding", {
-                PaddingBottom = UDim.new(0, 4),
-                PaddingTop = UDim.new(0, 4),
-                Parent = BoxHolder,
-            })
+        GroupboxList = New("UIListLayout", {
+            Padding = UDim.new(0, 8),
+            Parent = GroupboxContainer,
+        })
+        New("UIPadding", {
+            PaddingBottom = UDim.new(0, 7),
+            PaddingLeft = UDim.new(0, 7),
+            PaddingRight = UDim.new(0, 7),
+            PaddingTop = UDim.new(0, 7),
+            Parent = GroupboxContainer,
+        })
 
-            local TabboxHolder
-            local TabboxButtons
+        --[[ GLOW HOVER EFFECT ]]
+        ToggleButton.MouseEnter:Connect(function()
+            if not IsCollapsed then
+                TweenService:Create(GlowStroke, Library.TweenInfo, {
+                    Transparency = 0.3,
+                    Thickness = 1.5,
+                }):Play()
+            end
+        end)
 
-            do
-                TabboxHolder = New("Frame", {
-                    BackgroundColor3 = "BackgroundColor",
-                    Size = UDim2.fromScale(1, 0),
-                    Parent = BoxHolder,
-                })
-                New("UICorner", {
-                    CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
-                    Parent = TabboxHolder,
-                })
-                Library:AddOutline(TabboxHolder)
+        ToggleButton.MouseLeave:Connect(function()
+            if not IsCollapsed then
+                TweenService:Create(GlowStroke, Library.TweenInfo, {
+                    Transparency = 0.7,
+                    Thickness = 0.5,
+                }):Play()
+            end
+        end)
 
-                TabboxButtons = New("Frame", {
-                    BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 0, 34),
-                    Parent = TabboxHolder,
-                })
-                New("UIListLayout", {
-                    FillDirection = Enum.FillDirection.Horizontal,
-                    HorizontalFlex = Enum.UIFlexAlignment.Fill,
-                    Parent = TabboxButtons,
-                })
+        --[[ TOGGLE FUNCTIONALITY ]]
+        local function ToggleSection()
+            IsCollapsed = not IsCollapsed
+
+            if CollapseTween then
+                CollapseTween:Cancel()
             end
 
-            local Tabbox = {
-                ActiveTab = nil,
+            if IsCollapsed then
+                -- COLLAPSE
+                CollapseTween = TweenService:Create(
+                    GroupboxContainer,
+                    TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+                    { Size = UDim2.new(1, 0, 0, 0) }
+                )
+                CollapseTween:Play()
 
-                BoxHolder = BoxHolder,
-                Holder = TabboxHolder,
-                Tabs = {},
-            }
+                TweenService:Create(ToggleButton, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    Rotation = -90,
+                }):Play()
 
-            function Tabbox:AddTab(Name)
-                local Button = New("TextButton", {
-                    BackgroundColor3 = "MainColor",
-                    BackgroundTransparency = 0,
-                    Size = UDim2.fromOffset(0, 34),
-                    Text = Name,
-                    TextSize = 15,
-                    TextTransparency = 0.5,
-                    Parent = TabboxButtons,
-                })
-
-                local Line = Library:MakeLine(Button, {
-                    AnchorPoint = Vector2.new(0, 1),
-                    Position = UDim2.new(0, 0, 1, 1),
-                    Size = UDim2.new(1, 0, 0, 1),
-                })
-
-                local Container = New("Frame", {
-                    BackgroundTransparency = 1,
-                    Position = UDim2.fromOffset(0, 35),
-                    Size = UDim2.new(1, 0, 1, -35),
-                    Visible = false,
-                    Parent = TabboxHolder,
-                })
-                local List = New("UIListLayout", {
-                    Padding = UDim.new(0, 8),
-                    Parent = Container,
-                })
-                New("UIPadding", {
-                    PaddingBottom = UDim.new(0, 7),
-                    PaddingLeft = UDim.new(0, 7),
-                    PaddingRight = UDim.new(0, 7),
-                    PaddingTop = UDim.new(0, 7),
-                    Parent = Container,
-                })
-
-                local Tab = {
-                    ButtonHolder = Button,
-                    Container = Container,
-
-                    Tab = Tab,
-                    Elements = {},
-                    DependencyBoxes = {},
-                }
-
-                function Tab:Show()
-                    if Tabbox.ActiveTab then
-                        Tabbox.ActiveTab:Hide()
-                    end
-
-                    Button.BackgroundTransparency = 1
-                    Button.TextTransparency = 0
-                    Line.Visible = false
-
-                    Container.Visible = true
-
-                    Tabbox.ActiveTab = Tab
-                    Tab:Resize()
-                end
-
-                function Tab:Hide()
-                    Button.BackgroundTransparency = 0
-                    Button.TextTransparency = 0.5
-                    Line.Visible = true
-                    Container.Visible = false
-
-                    Tabbox.ActiveTab = nil
-                end
-
-                function Tab:Resize()
-                    if Tabbox.ActiveTab ~= Tab then
-                        return
-                    end
-
-                    TabboxHolder.Size = UDim2.new(1, 0, 0, (List.AbsoluteContentSize.Y / Library.DPIScale) + 49)
-                end
-
-                --// Execution \\--
-                if not Tabbox.ActiveTab then
-                    Tab:Show()
-                end
-
-                Button.MouseButton1Click:Connect(Tab.Show)
-
-                setmetatable(Tab, BaseGroupbox)
-
-                Tabbox.Tabs[Name] = Tab
-
-                return Tab
-            end
-
-            if Info.Name then
-                Tab.Tabboxes[Info.Name] = Tabbox
+                TweenService:Create(GlowStroke, Library.TweenInfo, {
+                    Transparency = 0.5,
+                    Thickness = 1,
+                }):Play()
             else
-                table.insert(Tab.Tabboxes, Tabbox)
-            end
+                -- EXPAND
+                CollapseTween = TweenService:Create(
+                    GroupboxContainer,
+                    TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+                    { Size = UDim2.new(1, 0, 1, -35) }
+                )
+                CollapseTween:Play()
 
-            return Tabbox
-        end
+                TweenService:Create(ToggleButton, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    Rotation = 0,
+                }):Play()
 
-        function Tab:AddLeftTabbox(Name)
-            return Tab:AddTabbox({ Side = 1, Name = Name })
-        end
-
-        function Tab:AddRightTabbox(Name)
-            return Tab:AddTabbox({ Side = 2, Name = Name })
-        end
-
-        function Tab:Hover(Hovering)
-            if Library.ActiveTab == Tab then
-                return
-            end
-
-            TweenService:Create(TabLabel, Library.TweenInfo, {
-                TextTransparency = Hovering and 0.25 or 0.5,
-            }):Play()
-            if TabIcon then
-                TweenService:Create(TabIcon, Library.TweenInfo, {
-                    ImageTransparency = Hovering and 0.25 or 0.5,
+                TweenService:Create(GlowStroke, Library.TweenInfo, {
+                    Transparency = 0.7,
+                    Thickness = 0.5,
                 }):Play()
             end
         end
 
-        function Tab:Show()
-            if Library.ActiveTab then
-                Library.ActiveTab:Hide()
-            end
-
-            TweenService:Create(TabButton, Library.TweenInfo, {
-                BackgroundTransparency = 0,
-            }):Play()
-            TweenService:Create(TabLabel, Library.TweenInfo, {
-                TextTransparency = 0,
-            }):Play()
-            if TabIcon then
-                TweenService:Create(TabIcon, Library.TweenInfo, {
-                    ImageTransparency = 0,
-                }):Play()
-            end
-
-            if Description then
-                Window:ShowTabInfo(Name, Description)
-            end
-
-            TabContainer.Visible = true
-            Tab:RefreshSides()
-
-            Library.ActiveTab = Tab
-
-            if Library.Searching then
-                Library:UpdateSearch(Library.SearchText)
-            end
-        end
-
-        function Tab:Hide()
-            TweenService:Create(TabButton, Library.TweenInfo, {
-                BackgroundTransparency = 1,
-            }):Play()
-            TweenService:Create(TabLabel, Library.TweenInfo, {
-                TextTransparency = 0.5,
-            }):Play()
-            if TabIcon then
-                TweenService:Create(TabIcon, Library.TweenInfo, {
-                    ImageTransparency = 0.5,
-                }):Play()
-            end
-            TabContainer.Visible = false
-
-            Window:HideTabInfo()
-
-            Library.ActiveTab = nil
-        end
-
-        --// Execution \\--
-        if not Library.ActiveTab then
-            Tab:Show()
-        end
-
-        TabButton.MouseEnter:Connect(function()
-            Tab:Hover(true)
-        end)
-        TabButton.MouseLeave:Connect(function()
-            Tab:Hover(false)
-        end)
-        TabButton.MouseButton1Click:Connect(Tab.Show)
-
-        Library.Tabs[Name] = Tab
-
-        return Tab
+        ToggleButton.MouseButton1Click:Connect(ToggleSection)
     end
+
+    local Groupbox = {
+        BoxHolder = BoxHolder,
+        Holder = GroupboxHolder,
+        Container = GroupboxContainer,
+
+        Tab = Tab,
+        DependencyBoxes = {},
+        Elements = {},
+        
+        --[[ NEW METHODS ]]
+        IsCollapsed = function() return IsCollapsed end,
+        Toggle = function() ToggleButton.MouseButton1Click:Fire() end,
+        Collapse = function() if not IsCollapsed then ToggleButton.MouseButton1Click:Fire() end end,
+        Expand = function() if IsCollapsed then ToggleButton.MouseButton1Click:Fire() end end,
+    }
+
+    function Groupbox:Resize()
+        if not IsCollapsed then
+            GroupboxHolder.Size = UDim2.new(1, 0, 0, (GroupboxList.AbsoluteContentSize.Y / Library.DPIScale) + 49)
+        end
+    end
+
+    setmetatable(Groupbox, BaseGroupbox)
+
+    Groupbox:Resize()
+    Tab.Groupboxes[Info.Name] = Groupbox
+
+    return Groupbox
+end
 
     function Window:AddKeyTab(...)
         local Name = nil
